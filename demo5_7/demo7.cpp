@@ -80,6 +80,7 @@ public:
         return true;
     }
 
+    // 接受服务端回应报文
     bool recv(string& buffer, size_t maxlen)
     {
         if(m_clientfd == -1)
