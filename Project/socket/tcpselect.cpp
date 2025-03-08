@@ -63,10 +63,11 @@ int main(int argc, char *argv[])
 
         // select() 中 会修改bitmap 所以需要将readfds拷贝到tmpfds中 再传给select()
         fd_set tmpfds = readfds;
+        fd_set tmpfds1 = readfds;
 
         // select() 等待监视事件的发生（监视那些socket发生了事件）
         // maxfd + 1: 告诉select bitmap有多大
-        int infds = select(maxfd + 1, &tmpfds, NULL, NULL, NULL);
+        int infds = select(maxfd + 1, &tmpfds, &tmpfds1, NULL, 0);
 
         // 如果intfds < 0 表示出错
         if(infds < 0)
@@ -80,6 +81,17 @@ int main(int argc, char *argv[])
             printf("timeout\n");
             continue;
         }
+        /** 
+        for (int eventfd = 0; eventfd <= maxfd; eventfd++)
+        {
+            if(FD_ISSET(eventfd, &tmpfds1) == 0)
+            {
+                continue;
+            }
+            printf("eventfd = %d 可以写\n", eventfd);
+        }
+        x */
+
         // 如果intfds > 0 表示有事件发生 intfds就是socket的个数
         for (int eventfd = 0; eventfd <= maxfd; eventfd++)
         {
