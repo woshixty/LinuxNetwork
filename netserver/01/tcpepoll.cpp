@@ -126,7 +126,7 @@ int main(int argc, char *argv[])
                 // 如果发生事件的是客户端socket 表示有客户端发来数据了
                 if(events[i].events & EPOLLRDHUP)   // 客户端关闭连接 有些系统监测不到 可以使用 EPOLLRDHUP recv() 返回 0
                 {
-                    printf("client %d closed\n", events[i].data.fd);
+                    printf("1 client %d closed\n", events[i].data.fd);
                     close(events[i].data.fd);
                 }
                 else if(events[i].events & EPOLLIN | EPOLLPRI)  // 接收缓冲区有数据可以写
@@ -143,20 +143,22 @@ int main(int argc, char *argv[])
                             printf("client %d send data: %s\n", events[i].data.fd, buffer);
                             send(events[i].data.fd, buffer, nread, 0);
                         }
-                        else if(nread == -1 && errno == EAGAIN)
+                        else if(nread == -1 && errno == EINTR)
                         {
                             // 读取数据的时候被信号中断 继续读取
+                            printf("continue to read\n");
                             continue;
                         }
                         else if(nread == -1 && (errno == EAGAIN || errno == EWOULDBLOCK))
                         {
                             // 所有数据已全部被读取完毕
+                            printf("all data read\n");
                             break;
                         }
                         else if(nread == 0)
                         {
                             // 客户端关闭连接
-                            printf("client %d closed\n", events[i].data.fd);
+                            printf("2 client %d closed\n", events[i].data.fd);
                             close(events[i].data.fd);
                             break;
                         }
