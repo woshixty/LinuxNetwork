@@ -1,6 +1,7 @@
 #pragma once
 
 #include <sys/epoll.h>
+#include <functional>
 #include "Epoll.h"
 #include "InetAddress.h"
 #include "Socket.h"
@@ -14,10 +15,10 @@ private:
     bool inepoll_ = false;  // Channel是否已添加到 epoll 树上 如果未添加 调用epoll_ctl()时调用EPOLL_CTL_ADD 否则调用EPOLL_CTL_MOD
     uint32_t events_ = 0;   // fd_需要监视的事件 listenfd_需要监视EPOLLIN clientfd_需要监视EPOLLOUT
     uint32_t revents_ = 0;  // fd_实际发生的事件
-    bool islisten_ = false; // 是否是监听套接字
+    std::function<void()> readcallback_;  // fd_读事件 回调函数
 
 public:
-    Channel(Epoll* ep, int fd, bool islisten);
+    Channel(Epoll* ep, int fd);
     ~Channel();
 
     int fd();                       // 获取fd_
@@ -29,5 +30,9 @@ public:
     uint32_t events();              // 获取events_
     uint32_t revents();             // 获取revents_
 
-    void handleevent(Socket* servsock);             // 处理发生的事件 epoll_wait()返回的时候 执行它
+    void handleevent();     // 处理发生的事件 epoll_wait()返回的时候 执行它
+
+    void newconnection(Socket* servsock);   // 处理新客户端连接
+    void onmessage();                       // 处理客户端发来的消息
+    void setreadcallback(std::function<void()> fn);  // 设置fd_读事件的回调函数
 };

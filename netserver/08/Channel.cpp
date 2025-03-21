@@ -1,7 +1,7 @@
 #include "Channel.h"
 
-Channel::Channel(Epoll* ep, int fd, bool islisten)
-    : fd_(fd), ep_(ep), islisten_(islisten)
+Channel::Channel(Epoll* ep, int fd)
+    : fd_(fd), ep_(ep)
 {
 }
 
@@ -51,7 +51,7 @@ uint32_t Channel::revents()
     return revents_;
 }
 
-void Channel::handleevent(Socket* servsock)
+void Channel::handleevent()
 {
     // 如果发生事件的是客户端socket 表示有客户端发来数据了
     if(revents_ & EPOLLRDHUP)   // 客户端关闭连接 有些系统监测不到 可以使用 EPOLLRDHUP recv() 返回 0
@@ -61,54 +61,7 @@ void Channel::handleevent(Socket* servsock)
     }
     else if(revents_ & EPOLLIN | EPOLLPRI)  // 接收缓冲区有数据可以写
     {
-        // 如果发生事件的是listenfd 表示有新的客户端连接上来了
-        if(islisten_ == true)
-        {
-            // 接受连接请求
-            InetAddress clientaddr;
-            Socket* clientsock = new Socket(servsock->accept(clientaddr));
-
-            // 打印客户端连接信息：socket、客户端地址和端口
-            printf("new client connected, clientsock = %d, clientaddr = %s, clientport = %d\n", clientsock->fd(), clientaddr.ip(), clientaddr.port());
-            Channel* clientchannel = new Channel(ep_, clientsock->fd(), false);
-            clientchannel->useet();
-            clientchannel->enablereading();
-        }
-        else
-        {
-            // 普通数据 和 带外数据
-            char buffer[1024];
-            // 由于使用非阻塞IO 一次性读取buffer大小的数据 直到全部读完
-            while(true)
-            {
-                bzero(&buffer, sizeof(buffer));
-                int nread = read(fd_, buffer, sizeof(buffer));
-                if(nread > 0)
-                {
-                    printf("client %d send data: %s\n", fd_, buffer);
-                    send(fd_, buffer, nread, 0);
-                }
-                else if(nread == -1 && errno == EINTR)
-                {
-                    // 读取数据的时候被信号中断 继续读取
-                    printf("continue to read\n");
-                    continue;
-                }
-                else if(nread == -1 && (errno == EAGAIN || errno == EWOULDBLOCK))
-                {
-                    // 所有数据已全部被读取完毕
-                    printf("all data read\n");
-                    break;
-                }
-                else if(nread == 0)
-                {
-                    // 客户端关闭连接
-                    printf("2 client %d closed\n", fd_);
-                    close(fd_);
-                    break;
-                }
-            }
-        }
+        readcallback_();
     }
     else if(revents_ & EPOLLOUT)    // 发送缓冲区有空间可以写
     {}
@@ -118,4 +71,59 @@ void Channel::handleevent(Socket* servsock)
         printf("client %d error\n", fd_);
         close(fd_);
     }
-} 
+}
+
+void Channel::newconnection(Socket* servsock)
+{
+    // 接受连接请求
+    InetAddress clientaddr;
+    Socket* clientsock = new Socket(servsock->accept(clientaddr));
+
+    // 打印客户端连接信息：socket、客户端地址和端口
+    printf("new client connected, clientsock = %d, clientaddr = %s, clientport = %d\n", clientsock->fd(), clientaddr.ip(), clientaddr.port());
+    Channel* clientchannel = new Channel(ep_, clientsock->fd());
+    clientchannel->setreadcallback(std::bind(&Channel::onmessage, clientchannel));
+    clientchannel->useet();
+    clientchannel->enablereading();
+}
+
+void Channel::onmessage()
+{
+    // 普通数据 和 带外数据
+    char buffer[1024];
+    // 由于使用非阻塞IO 一次性读取buffer大小的数据 直到全部读完
+    while(true)
+    {
+        bzero(&buffer, sizeof(buffer));
+        int nread = read(fd_, buffer, sizeof(buffer));
+        if(nread > 0)
+        {
+            printf("client %d send data: %s\n", fd_, buffer);
+            send(fd_, buffer, nread, 0);
+        }
+        else if(nread == -1 && errno == EINTR)
+        {
+            // 读取数据的时候被信号中断 继续读取
+            printf("continue to read\n");
+            continue;
+        }
+        else if(nread == -1 && (errno == EAGAIN || errno == EWOULDBLOCK))
+        {
+            // 所有数据已全部被读取完毕
+            printf("all data read\n");
+            break;
+        }
+        else if(nread == 0)
+        {
+            // 客户端关闭连接
+            printf("2 client %d closed\n", fd_);
+            close(fd_);
+            break;
+        }
+    }
+}
+
+void Channel::setreadcallback(std::function<void()> fn)
+{
+    readcallback_ = fn;
+}
