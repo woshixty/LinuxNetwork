@@ -9,6 +9,7 @@ TcpServer::TcpServer(const std::string& ip, uint16_t port)
 
 TcpServer::~TcpServer()
 {
+    delete acceptor_;
 }
 
 void TcpServer::start()

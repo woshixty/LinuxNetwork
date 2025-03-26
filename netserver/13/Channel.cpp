@@ -1,5 +1,7 @@
 #include "Channel.h"
 
+#include "Connection.h"
+
 Channel::Channel(EventLoop* loop,int fd):loop_(loop),fd_(fd)      // 构造函数。
 {
 
@@ -62,12 +64,6 @@ void Channel::handleevent()
     }                                //  普通数据  带外数据
     else if (revents_ & (EPOLLIN|EPOLLPRI))   // 接收缓冲区中有数据可以读。
     {
-        /*
-        if (islisten_==true)   // 如果是listenfd有事件，表示有新的客户端连上来。
-            newconnection(servsock);
-        else                          // 如果是客户端连接的fd有事件。
-            onmessage();
-        */
         readcallback_();
     }
     else if (revents_ & EPOLLOUT)                  // 有数据需要写，暂时没有代码，以后再说。
@@ -89,12 +85,7 @@ void Channel::newconnection(Socket *servsock)
     Socket *clientsock=new Socket(servsock->accept(clientaddr));
 
     printf ("accept client(fd=%d,ip=%s,port=%d) ok.\n",clientsock->fd(),clientaddr.ip(),clientaddr.port());
-
-    // 为新客户端连接准备读事件，并添加到epoll中。
-    Channel *clientchannel=new Channel(loop_,clientsock->fd());   // 这里new出来的对象没有释放，这个问题以后再解决。
-    clientchannel->setreadcallback(std::bind(&Channel::onmessage,clientchannel));
-    clientchannel->useet();                 // 客户端连上来的fd采用边缘触发。
-    clientchannel->enablereading();   // 让epoll_wait()监视clientchannel的读事件
+    Connection* conn=new Connection(loop_,clientsock);
 }
 
 // 处理对端发送过来的消息。
