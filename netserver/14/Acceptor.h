@@ -5,6 +5,7 @@
 #include "InetAddress.h"
 #include "Channel.h"
 #include "EventLoop.h"
+#include "Connection.h"
 
 class Acceptor
 {
@@ -15,4 +16,6 @@ private:
 public:
     Acceptor(EventLoop* loop, const std::string& ip, uint16_t port);
     ~Acceptor();
+
+    void newconnection();
 };

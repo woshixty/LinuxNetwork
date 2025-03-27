@@ -76,18 +76,6 @@ void Channel::handleevent()
     }
 }
 
-// 处理新客户端连接请求。
-void Channel::newconnection(Socket *servsock)    
-{
-    InetAddress clientaddr;             // 客户端的地址和协议。
-    // 注意，clientsock只能new出来，不能在栈上，否则析构函数会关闭fd。
-    // 还有，这里new出来的对象没有释放，这个问题以后再解决。
-    Socket *clientsock=new Socket(servsock->accept(clientaddr));
-
-    printf ("accept client(fd=%d,ip=%s,port=%d) ok.\n",clientsock->fd(),clientaddr.ip(),clientaddr.port());
-    Connection* conn=new Connection(loop_,clientsock);
-}
-
 // 处理对端发送过来的消息。
 void Channel::onmessage()
 {
