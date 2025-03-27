@@ -32,5 +32,10 @@ void Acceptor::newconnection()
     Socket *clientsock=new Socket(servsock_->accept(clientaddr));
 
     printf ("accept client(fd=%d,ip=%s,port=%d) ok.\n",clientsock->fd(),clientaddr.ip(),clientaddr.port());
-    Connection* conn=new Connection(loop_,clientsock);
+    newconnectioncb_(clientsock);
+}
+
+void Acceptor::setnewconnectioncallback(std::function<void(Socket*)> fn)
+{
+    newconnectioncb_ = fn;
 }

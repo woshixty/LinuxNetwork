@@ -17,4 +17,6 @@ public:
     ~TcpServer();
 
     void start();
+
+    void newconnection(Socket* clientsock);
 };
