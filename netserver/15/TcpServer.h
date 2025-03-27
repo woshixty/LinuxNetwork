@@ -1,5 +1,7 @@
 #pragma once
 
+#include <map>
+
 #include "EventLoop.h"
 #include "Socket.h"
 #include "Channel.h"
@@ -11,6 +13,7 @@ class TcpServer
 private:
     EventLoop loop_;        // 一个TcpServer可以有多个事件循环 目前是单线程 之用一个事件循环
     Acceptor* acceptor_;     // 一个TcpServer只能有一个Acceptor
+    std::map<int, Connection*> conns_;
 
 public:
     TcpServer(const std::string& ip, uint16_t port);

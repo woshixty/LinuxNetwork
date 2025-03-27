@@ -15,4 +15,8 @@ private:
 public:
     Connection(EventLoop* loop, Socket* clientsock);
     ~Connection();
+
+    int fd();
+    std::string ip();
+    uint16_t port();
 };
