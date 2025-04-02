@@ -15,4 +15,11 @@ private:
 public:
     Connection(EventLoop* loop, Socket* clientsock);
     ~Connection();
+
+    int fd() const { return clientsock_->fd(); }    // 返回fd_成员。
+    std::string ip() const { return clientsock_->ip(); }    // 返回ip_成员。
+    uint16_t port() const { return clientsock_->port(); }    // 返回port_成员。
+
+    void closecallback();    // 关闭连接的回调函数
+    void errorcallback();    // 错误的回调函数
 };

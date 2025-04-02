@@ -30,6 +30,16 @@ int Socket::fd() const                              // 返回fd_成员。
     return fd_;
 }
 
+std::string Socket::ip() const                      // 返回ip_成员。
+{
+    return ip_;
+}
+
+uint16_t Socket::port() const                       // 返回port_成员。
+{
+    return port_;
+}
+
 void Socket::settcpnodelay(bool on)
 {
     int optval = on ? 1 : 0;

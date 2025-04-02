@@ -4,7 +4,6 @@
 
 Channel::Channel(EventLoop* loop,int fd):loop_(loop),fd_(fd)      // 构造函数。
 {
-
 }
 
 Channel::~Channel()                           // 析构函数。 
@@ -25,7 +24,6 @@ void Channel::useet()                                    // 采用边缘触发�
 void Channel::enablereading()                     // 让epoll_wait()监视fd_的读事件。
 {
     events_|=EPOLLIN;
-    // ep_->updatechannel(this);
     loop_->updatechannel(this);
 }
 
@@ -57,22 +55,25 @@ uint32_t Channel::revents()                          // 返回revents_成员。
 // 事件处理函数，epoll_wait()返回的时候，执行它。
 void Channel::handleevent()
 {
-    if (revents_ & EPOLLRDHUP)                     // 对方已关闭，有些系统检测不到，可以使用EPOLLIN，recv()返回0。
+    // 对方已关闭，有些系统检测不到，可以使用EPOLLIN，recv()返回0。
+    if (revents_ & EPOLLRDHUP)
     {
-        printf("client(eventfd=%d) disconnected.\n",fd_);
-        close(fd_);            // 关闭客户端的fd。
-    }                                //  普通数据  带外数据
-    else if (revents_ & (EPOLLIN|EPOLLPRI))   // 接收缓冲区中有数据可以读。
+        closecallback_();
+    }
+    // 普通数据 带外数据
+    // 接收缓冲区中有数据可以读。
+    else if (revents_ & (EPOLLIN|EPOLLPRI))
     {
         readcallback_();
     }
-    else if (revents_ & EPOLLOUT)                  // 有数据需要写，暂时没有代码，以后再说。
+    // 有数据需要写，暂时没有代码，以后再说。
+    else if (revents_ & EPOLLOUT)
     {
     }
-    else                                                                   // 其它事件，都视为错误。
+    // 其它事件，都视为错误。
+    else
     {
-        printf("client(eventfd=%d) error.\n",fd_);
-        close(fd_);            // 关闭客户端的fd。
+        errorcallback_();
     }
 }
 
@@ -99,9 +100,8 @@ void Channel::onmessage()
             break;
         } 
         else if (nread == 0)  // 客户端连接已断开。
-        {  
-            printf("client(eventfd=%d) disconnected.\n",fd_);
-            close(fd_);            // 关闭客户端的fd。
+        {
+            closecallback_();
             break;
         }
     }
@@ -112,3 +112,13 @@ void Channel::onmessage()
  {
     readcallback_=fn;
  }
+
+ void Channel::setclosecallback(std::function<void()> fn)   
+ {
+    closecallback_=fn;
+ }
+
+void Channel::seterrorcallback(std::function<void()> fn)   
+{
+    errorcallback_=fn;
+}
