@@ -81,8 +81,7 @@ void Channel::handleevent()
 void Channel::onmessage()
 {
     char buffer[1024];
-    // 由于使用非阻塞IO，一次读取buffer大小数据，直到全部的数据读取完毕。
-    while (true)
+    while (true)             // 由于使用非阻塞IO，一次读取buffer大小数据，直到全部的数据读取完毕。
     {    
         bzero(&buffer, sizeof(buffer));
         ssize_t nread = read(fd_, buffer, sizeof(buffer));
