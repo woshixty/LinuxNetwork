@@ -19,12 +19,10 @@ Connection::~Connection()
 
 void Connection::closecallback()
 {
-    printf("client(eventfd=%d) disconnected.\n",fd());
-    close(fd());
+    closecallback_(this);
 }
 
 void Connection::errorcallback()
 {
-    printf("client(eventfd=%d) error.\n",fd());
-    close(fd());
+    errorcallback_(this);
 }
