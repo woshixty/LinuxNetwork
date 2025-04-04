@@ -33,7 +33,6 @@ public:
     uint32_t revents();
 
     void handleevent();
-    void onmessage();
 
     void setreadcallback(std::function<void()> fn);    // 设置fd_读事件的回调函数。
     void setclosecallback(std::function<void()> fn);   // 设置关闭fd_的回调函数。

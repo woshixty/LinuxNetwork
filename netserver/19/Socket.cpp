@@ -40,6 +40,12 @@ uint16_t Socket::port() const                              // 返回port_成员�
     return port_;
 }
 
+void Socket::setipport(const std::string& ip, uint16_t port)
+{
+    ip_ = ip;
+    port_ = port;
+}
+
 void Socket::settcpnodelay(bool on)
 {
     int optval = on ? 1 : 0;
@@ -70,9 +76,7 @@ void Socket::bind(const InetAddress& servaddr)
     {
         perror("bind() failed"); close(fd_); exit(-1);
     }
-
-    ip_=servaddr.ip();
-    port_=servaddr.port();
+    setipport(servaddr.ip(), servaddr.port());
 }
 
 void Socket::listen(int nn)
@@ -90,10 +94,5 @@ int Socket::accept(InetAddress& clientaddr)
     int clientfd = accept4(fd_,(sockaddr*)&peeraddr,&len,SOCK_NONBLOCK);
 
     clientaddr.setaddr(peeraddr);             // 客户端的地址和协议。
-
-    // 注意：以下两行代码有问题，这个问题将会被修复，以后再说，先不要管它。
-    ip_=clientaddr.ip();
-    port_=clientaddr.port();
-
     return clientfd;    
 }

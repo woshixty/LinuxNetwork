@@ -76,53 +76,20 @@ void Channel::handleevent()
     }
 }
 
-// 处理对端发送过来的消息。
-void Channel::onmessage()
+// 设置fd_读事件的回调函数。
+void Channel::setreadcallback(std::function<void()> fn)    
 {
-    char buffer[1024];
-    // 由于使用非阻塞IO，一次读取buffer大小数据，直到全部的数据读取完毕。
-    while (true)
-    {
-        bzero(&buffer, sizeof(buffer));
-        ssize_t nread = read(fd_, buffer, sizeof(buffer));
-        if (nread > 0)      // 成功的读取到了数据。
-        {
-            // 把接收到的报文内容原封不动的发回去。
-            printf("recv(eventfd=%d):%s\n",fd_,buffer);
-            send(fd_,buffer,strlen(buffer),0);
-        }
-        // 读取数据的时候被信号中断，继续读取。
-        else if (nread == -1 && errno == EINTR)
-        {
-            continue;
-        }
-        else if (nread == -1 && ((errno == EAGAIN) || (errno == EWOULDBLOCK))) // 全部的数据已读取完毕。
-        {
-            break;
-        }
-        // 客户端连接已断开。
-        else if (nread == 0)
-        {
-            closecallback_();
-            break;
-        }
-    }
+    readcallback_=fn;
 }
 
- // 设置fd_读事件的回调函数。
- void Channel::setreadcallback(std::function<void()> fn)    
- {
-    readcallback_=fn;
- }
-
- // 设置关闭fd_的回调函数。
- void Channel::setclosecallback(std::function<void()> fn)    
- {
+// 设置关闭fd_的回调函数。
+void Channel::setclosecallback(std::function<void()> fn)    
+{
     closecallback_=fn;
- }
+}
 
- // 设置fd_发生了错误的回调函数。
- void Channel::seterrorcallback(std::function<void()> fn)    
- {
+// 设置fd_发生了错误的回调函数。
+void Channel::seterrorcallback(std::function<void()> fn)    
+{
     errorcallback_=fn;
- }
+}
