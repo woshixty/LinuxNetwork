@@ -22,4 +22,6 @@ public:
     void newconnection(Socket *clientsock);    // 处理新客户端连接请求，在Acceptor类中回调此函数。
     void closeconnection(Connection *conn);  // 关闭客户端的连接，在Connection类中回调此函数。 
     void errorconnection(Connection *conn);  // 客户端的连接错误，在Connection类中回调此函数。
+
+    void onmessage(Connection* conn, std::string message); 
 };

@@ -22,7 +22,11 @@ int main(int argc, char *argv[])
     struct sockaddr_in servaddr;
     char buf[1024];
  
-    if ((sockfd=socket(AF_INET,SOCK_STREAM,0))<0) { printf("socket() failed.\n"); return -1; }
+    if ((sockfd=socket(AF_INET,SOCK_STREAM,0))<0) 
+    {
+        printf("socket() failed.\n");
+        return -1;
+    }
     
     memset(&servaddr,0,sizeof(servaddr));
     servaddr.sin_family=AF_INET;
@@ -31,31 +35,36 @@ int main(int argc, char *argv[])
 
     if (connect(sockfd, (struct sockaddr *)&servaddr,sizeof(servaddr)) != 0)
     {
-        printf("connect(%s:%s) failed.\n",argv[1],argv[2]); close(sockfd);  return -1;
+        printf("connect(%s:%s) failed.\n",argv[1],argv[2]);
+        close(sockfd);
+        return -1;
     }
 
     printf("connect ok.\n");
-    // printf("开始时间：%d",time(0));
 
-    for (int ii=0;ii<200000;ii++)
+    for (int ii=0;ii<100;ii++)
     {
         // 从命令行输入内容。
         memset(buf,0,sizeof(buf));
-        printf("please input:"); scanf("%s",buf);
+        sprintf(buf, "这是第%d个超级女生", ii);
 
-        if (send(sockfd,buf,strlen(buf),0) <=0)       // 把命令行输入的内容发送给服务端。
-        { 
-            printf("write() failed.\n");  close(sockfd);  return -1;
-        }
-        
+        char tmpbuf[1024];
+        memset(tmpbuf, 0, sizeof(tmpbuf));
+        int len = strlen(buf);
+        memcpy(tmpbuf, &len, 4);
+        memcpy(tmpbuf+4, buf, len);
+
+        send(sockfd,tmpbuf,len+4,0);
+    }
+
+    for (int ii=0;ii<100;ii++)
+    {
+        int len;
+        recv(sockfd, &len, 4, 0);
+
         memset(buf,0,sizeof(buf));
-        if (recv(sockfd,buf,sizeof(buf),0) <=0)      // 接收服务端的回应。
-        { 
-            printf("read() failed.\n");  close(sockfd);  return -1;
-        }
+        recv(sockfd,buf,len,0);
 
         printf("recv:%s\n",buf);
     }
-
-    // printf("结束时间：%d",time(0));
 } 

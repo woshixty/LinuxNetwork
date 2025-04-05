@@ -75,9 +75,41 @@ void Connection::onmessage()
         }
         else if (nread == -1 && ((errno == EAGAIN) || (errno == EWOULDBLOCK))) // 全部的数据已读取完毕。
         {
-            printf("recv(eventfd=%d):%s\n", fd(), inputbuffer_.data());
-            outputbuffer_ = inputbuffer_;
-            send(fd(), outputbuffer_.data(), outputbuffer_.size(), 0);
+            while (true)
+            {
+                int len = 0;
+
+                // 确保 inputbuffer_ 至少有 4 个字节用于读取消息长度
+                if (inputbuffer_.size() < 4)
+                {
+                    break; // 数据不足，等待更多数据
+                }
+
+                // 读取消息长度
+                memcpy(&len, inputbuffer_.data(), 4);
+
+                // 检查消息长度是否合法
+                if (len <= 0 || len > 1024) // 假设消息长度不能超过 1024 字节
+                {
+                    fprintf(stderr, "Invalid message length: %d\n", len);
+                    inputbuffer_.erase(0, 4); // 丢弃长度字段，避免死循环
+                    continue;
+                }
+
+                // 确保 inputbuffer_ 包含完整的消息数据
+                if (inputbuffer_.size() < len + 4)
+                {
+                    break; // 数据不足，等待更多数据
+                }
+
+                // 提取消息内容
+                std::string message(inputbuffer_.data() + 4, len);
+                inputbuffer_.erase(0, len + 4);
+
+                // 打印接收到的消息
+                printf("recv(eventfd=%d):%s\n", fd(), message.c_str());
+                onmessagecallback_(this, message);
+            }
             break;
         }
         // 客户端连接已断开。
@@ -87,4 +119,9 @@ void Connection::onmessage()
             break;
         }
     }
+}
+
+void Connection::setonmessagecallback(std::function<void(Connection*, std::string)> fn)
+{
+    onmessagecallback_ = fn;
 }
