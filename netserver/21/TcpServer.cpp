@@ -64,5 +64,5 @@ void TcpServer::onmessage(Connection* conn, std::string message)
     tmpbuf.append(message);
 
     // 发送回复消息
-    send(conn->fd(), tmpbuf.data(), tmpbuf.size(), 0);
+    conn->send(tmpbuf.data(), tmpbuf.size());
 }

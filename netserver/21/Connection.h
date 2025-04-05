@@ -30,9 +30,12 @@ public:
 
     void closecallback();       // TCP连接关闭（断开）的回调函数，供Channel回调。
     void errorcallback();       // TCP连接错误的回调函数，供Channel回调。
+    void writecallback();       // 处理写事件的回调函数，供Channel回调。
 
     void setclosecallback(std::function<void(Connection*)> fn);    // 设置关闭fd_的回调函数。
     void seterrorcallback(std::function<void(Connection*)> fn);    // 设置fd_发生了错误的回调函数。
     void setonmessagecallback(std::function<void(Connection*, std::string)> fn);
     void onmessage();
+
+    void send(const char* data, size_t size);
 };

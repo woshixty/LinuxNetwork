@@ -26,6 +26,24 @@ void Channel::enablereading()
     loop_->updatechannel(this);
 }
 
+void Channel::disablereading()
+{
+    events_&=~EPOLLIN;
+    loop_->updatechannel(this);
+}
+
+void Channel::enablewriting()
+{
+    events_|=EPOLLOUT;
+    loop_->updatechannel(this);
+}
+
+void Channel::disablewriting()
+{
+    events_&=~EPOLLOUT;
+    loop_->updatechannel(this);
+}
+
 void Channel::setinepoll()
 {
     inepoll_=true;
@@ -57,17 +75,21 @@ void Channel::handleevent()
     // 对方已关闭，有些系统检测不到，可以使用EPOLLIN，recv()返回0。
     if (revents_ & EPOLLRDHUP)
     {
+        printf("EPOLLRDHUP\n");
         closecallback_();
     }
     // 接收缓冲区中有数据可以读。
     else if (revents_ & (EPOLLIN|EPOLLPRI))
     {
+        printf("EPOLLIN|EPOLLPRI\n");
         // 如果是acceptchannel，将回调Acceptor::newconnection()，如果是clientchannel，将回调Channel::onmessage()。
         readcallback_();
     }
     // 有数据需要写，暂时没有代码，以后再说。
     else if (revents_ & EPOLLOUT)
     {
+        printf("EPOLLOUT\n");
+        writecallback_();
     }
     // 其它事件，都视为错误。
     else
@@ -92,4 +114,9 @@ void Channel::setclosecallback(std::function<void()> fn)
 void Channel::seterrorcallback(std::function<void()> fn)    
 {
     errorcallback_=fn;
+}
+
+void Channel::setwritecallback(std::function<void()> fn)
+{
+    writecallback_=fn;
 }

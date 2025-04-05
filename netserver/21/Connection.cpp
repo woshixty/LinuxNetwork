@@ -8,6 +8,7 @@ Connection::Connection(EventLoop *loop,Socket *clientsock):loop_(loop),clientsoc
     clientchannel_->setreadcallback(std::bind(&Connection::onmessage,this));
     clientchannel_->setclosecallback(std::bind(&Connection::closecallback,this));
     clientchannel_->seterrorcallback(std::bind(&Connection::errorcallback,this));
+    clientchannel_->setwritecallback(std::bind(&Connection::writecallback,this));
     clientchannel_->useet();                 // 客户端连上来的fd采用边缘触发。
     clientchannel_->enablereading();   // 让epoll_wait()监视clientchannel的读事件
 }
@@ -41,6 +42,19 @@ void Connection::closecallback()
 void Connection::errorcallback()
 {
     errorcallback_(this);     // 回调TcpServer::errorconnection()。
+}
+
+void Connection::writecallback()
+{
+    int writen=::send(fd(), outputbuffer_.data(), outputbuffer_.size(), 0);
+    if(writen>0)
+    {
+        outputbuffer_.erase(0, writen);
+    }
+    if(outputbuffer_.size() == 0)
+    {
+        clientchannel_->disablewriting();
+    }
 }
 
 // 设置关闭fd_的回调函数。
@@ -124,4 +138,11 @@ void Connection::onmessage()
 void Connection::setonmessagecallback(std::function<void(Connection*, std::string)> fn)
 {
     onmessagecallback_ = fn;
+}
+
+void Connection::send(const char* data, size_t size)
+{
+    outputbuffer_.append(data, size);
+    // 注册写事件
+    clientchannel_->enablewriting();
 }

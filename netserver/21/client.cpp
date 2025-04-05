@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
 
     printf("connect ok.\n");
 
-    for (int ii=0;ii<100;ii++)
+    for (int ii=0;ii<2;ii++)
     {
         // 从命令行输入内容。
         memset(buf,0,sizeof(buf));
@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
         send(sockfd,tmpbuf,len+4,0);
     }
 
-    for (int ii=0;ii<100;ii++)
+    for (int ii=0;ii<2;ii++)
     {
         int len;
         recv(sockfd, &len, 4, 0);

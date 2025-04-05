@@ -18,6 +18,7 @@ private:
     std::function<void()> readcallback_;         // fd_读事件的回调函数，如果是acceptchannel，将回调Acceptor::newconnection()，如果是clientchannel，将回调Channel::onmessage()。
     std::function<void()> closecallback_;        // 关闭fd_的回调函数，将回调Connection::closecallback()。
     std::function<void()> errorcallback_;        // fd_发生了错误的回调函数，将回调Connection::errorcallback()。
+    std::function<void()> writecallback_;
 
 public:
     Channel(EventLoop* loop,int fd);
@@ -26,6 +27,9 @@ public:
     int fd();
     void useet();
     void enablereading();
+    void disablereading();
+    void enablewriting();
+    void disablewriting();
     void setinepoll();
     void setrevents(uint32_t ev);
     bool inpoll();
@@ -37,4 +41,5 @@ public:
     void setreadcallback(std::function<void()> fn);    // 设置fd_读事件的回调函数。
     void setclosecallback(std::function<void()> fn);   // 设置关闭fd_的回调函数。
     void seterrorcallback(std::function<void()> fn);   // 设置fd_发生了错误的回调函数。
+    void setwritecallback(std::function<void()> fn);
 };
