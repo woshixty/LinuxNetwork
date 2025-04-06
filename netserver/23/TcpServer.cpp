@@ -32,53 +32,40 @@ void TcpServer::newconnection(Socket* clientsock)
     conn->seterrorcallback(std::bind(&TcpServer::errorconnection,this,std::placeholders::_1));
     conn->setonmessagecallback(std::bind(&TcpServer::onmessage,this,std::placeholders::_1,std::placeholders::_2));
     conn->setsendcompletecallback(std::bind(&TcpServer::sendcomplete,this,std::placeholders::_1));
-    printf ("new connection(fd=%d,ip=%s,port=%d) ok.\n",conn->fd(),conn->ip().c_str(),conn->port());
-
+    
     conns_[conn->fd()]=conn;            // 把conn存放map容器中。
+    newconnectioncb_(conn);
 }
 
  // 关闭客户端的连接，在Connection类中回调此函数。 
  void TcpServer::closeconnection(Connection *conn)
  {
-    printf("client(eventfd=%d) disconnected.\n",conn->fd());
-    // close(conn->fd());            // 关闭客户端的fd。
-    conns_.erase(conn->fd());   // 从map中删除conn。
+    closecb_(conn);
+    conns_.erase(conn->fd());
     delete conn;
  }
 
 // 客户端的连接错误，在Connection类中回调此函数。
 void TcpServer::errorconnection(Connection *conn)
 {
-    printf("client(eventfd=%d) error.\n",conn->fd());
-    // close(conn->fd());            // 关闭客户端的fd。
-    conns_.erase(conn->fd());   // 从map中删除conn。
+    errorcb_(conn);
+    conns_.erase(conn->fd());
     delete conn;
 }
 
 void TcpServer::onmessage(Connection* conn, std::string message)
 {
-    // 假设在这里经过复杂运算
-    message = "reply: " + message;
-
-    // 构造回复消息
-    int len = message.size();
-    std::string tmpbuf((char*)&len, 4);
-    tmpbuf.append(message);
-
-    // 发送回复消息
-    conn->send(tmpbuf.data(), tmpbuf.size());
+    onmessagecb_(conn, message);
 }
 
 void TcpServer::sendcomplete(Connection* conn)
 {
-    printf("send complete\n");
-
     // 根据业务需求增加代码
+    sendcompletecb_(conn);
 }
 
 void TcpServer::epolltimeout(EventLoop* loop)
 {
-    printf("epoll_wait() timeout\n");
-
     // 根据业务需求增加代码
+    epolltimeoutcb_(loop);
 }

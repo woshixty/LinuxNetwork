@@ -2,7 +2,7 @@
  * 程序名：tcpepoll.cpp，此程序用于演示采用epoll模型实现网络通讯的服务端。
  * 作者：吴从周
 */
-#include "TcpServer.h"
+#include "EchoServer.h"
 
 int main(int argc,char *argv[])
 {
@@ -13,9 +13,8 @@ int main(int argc,char *argv[])
         return -1; 
     }
 
-    TcpServer tcpserver(argv[1],atoi(argv[2]));
-
-    tcpserver.start();      // 运行事件循环。
+    EchoServer ecgoServer(argv[1],atoi(argv[2]));
+    ecgoServer.start();
 
     return 0;
 }
