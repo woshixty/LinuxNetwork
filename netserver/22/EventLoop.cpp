@@ -17,11 +17,18 @@ void EventLoop::run()
 {
     while (true)        // 事件循环。
     {
-       std::vector<Channel *> channels=ep_->loop();         // 等待监视的fd有事件发生。
+        std::vector<Channel *> channels=ep_->loop(5 * 1000);         // 等待监视的fd有事件发生。
 
-        for (auto &ch:channels)
+        if(channels.size() == 0)
         {
-            ch->handleevent();        // 处理epoll_wait()返回的事件。
+            epolltimeoutcallback_(this);
+        }
+        else
+        {
+            for (auto &ch:channels)
+            {
+                ch->handleevent();        // 处理epoll_wait()返回的事件。
+            }
         }
     }
 }
@@ -30,4 +37,9 @@ void EventLoop::run()
 void EventLoop::updatechannel(Channel *ch)                        
 {
     ep_->updatechannel(ch);
+}
+
+void EventLoop::setepolltimeoutcallback(std::function<void(EventLoop*)> fn)
+{
+    epolltimeoutcallback_ = fn;
 }

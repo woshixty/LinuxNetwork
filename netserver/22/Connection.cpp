@@ -54,6 +54,7 @@ void Connection::writecallback()
     if(outputbuffer_.size() == 0)
     {
         clientchannel_->disablewriting();
+        sendcompletecallback_(this);
     }
 }
 
@@ -145,4 +146,9 @@ void Connection::send(const char* data, size_t size)
     outputbuffer_.append(data, size);
     // 注册写事件
     clientchannel_->enablewriting();
+}
+
+void Connection::setsendcompletecallback(std::function<void(Connection*)> fn)
+{
+    sendcompletecallback_ = fn;
 }
