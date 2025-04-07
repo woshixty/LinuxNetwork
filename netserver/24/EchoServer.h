@@ -18,7 +18,7 @@ public:
     void HandleCloseConnection(Connection *conn);  // 关闭客户端的连接，在Connection类中回调此函数。 
     void HandleErrorConnection(Connection *conn);  // 客户端的连接错误，在Connection类中回调此函数。
 
-    void HandleOnMessage(Connection* conn, std::string message);
+    void HandleOnMessage(Connection* conn, std::string& message);
     void HandleSendComplete(Connection* conn);
     void HandleEpollTimeout(EventLoop* loop);
 };

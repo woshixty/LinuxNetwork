@@ -136,14 +136,14 @@ void Connection::onmessage()
     }
 }
 
-void Connection::setonmessagecallback(std::function<void(Connection*, std::string)> fn)
+void Connection::setonmessagecallback(std::function<void(Connection*, std::string&)> fn)
 {
     onmessagecallback_ = fn;
 }
 
 void Connection::send(const char* data, size_t size)
 {
-    outputbuffer_.append(data, size);
+    outputbuffer_.appendwithhead(data, size);
     // 注册写事件
     clientchannel_->enablewriting();
 }

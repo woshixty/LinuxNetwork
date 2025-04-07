@@ -30,3 +30,9 @@ const char* Buffer::data()
 {
     return buf_.data();
 }
+
+void Buffer::appendwithhead(const char* data, size_t size)
+{
+    buf_.append((char*)&size, 4);
+    buf_.append(data, size);
+}

@@ -36,18 +36,13 @@ void EchoServer::HandleErrorConnection(Connection *conn)
     std::cerr << "Connection error: " << conn->ip() << ":" << conn->port() << std::endl;
 }
 
-void EchoServer::HandleOnMessage(Connection* conn, std::string message)
+void EchoServer::HandleOnMessage(Connection* conn, std::string& message)
 {
     // 假设在这里经过复杂运算
     message = "reply: " + message;
 
-    // 构造回复消息
-    int len = message.size();
-    std::string tmpbuf((char*)&len, 4);
-    tmpbuf.append(message);
-
     // 发送回复消息
-    conn->send(tmpbuf.data(), tmpbuf.size());
+    conn->send(message.data(), message.size());
 }
 
 void EchoServer::HandleSendComplete(Connection* conn)

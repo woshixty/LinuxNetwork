@@ -53,7 +53,7 @@ void TcpServer::errorconnection(Connection *conn)
     delete conn;
 }
 
-void TcpServer::onmessage(Connection* conn, std::string message)
+void TcpServer::onmessage(Connection* conn, std::string& message)
 {
     onmessagecb_(conn, message);
 }
