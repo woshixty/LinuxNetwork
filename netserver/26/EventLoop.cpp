@@ -1,5 +1,8 @@
 #include "EventLoop.h"
 
+#include "unistd.h"   // syscall(SYS_gettid)需要包含此头文件。
+#include "sys/syscall.h"   // syscall(SYS_gettid)需要包含此头文件。
+
 // 在构造函数中创建Epoll对象ep_。
 EventLoop::EventLoop():ep_(new Epoll)                   
 {
@@ -15,10 +18,12 @@ EventLoop::~EventLoop()
 // 运行事件循环。
 void EventLoop::run()                      
 {
-    while (true)        // 事件循环。
+    // 打印线程ID
+    // printf("EventLoop thread is %ld.\n",syscall(SYS_gettid));
+    while (true)
     {
-        std::vector<Channel *> channels=ep_->loop(5 * 1000);         // 等待监视的fd有事件发生。
-
+        // 等待监视的fd有事件发生
+        std::vector<Channel *> channels=ep_->loop(100 * 1000);
         if(channels.size() == 0)
         {
             epolltimeoutcallback_(this);
@@ -27,7 +32,8 @@ void EventLoop::run()
         {
             for (auto &ch:channels)
             {
-                ch->handleevent();        // 处理epoll_wait()返回的事件。
+                // 处理epoll_wait()返回的事件
+                ch->handleevent();
             }
         }
     }

@@ -24,6 +24,8 @@ void EchoServer::start()
 void EchoServer::HandleNewConnection(Connection *clientsock)
 {
     std::cout << "New connection from " << clientsock->ip() << ":" << clientsock->port() << std::endl;
+
+    printf("[%s], Thread ID: %ld\n", __FUNCTION__, syscall(SYS_gettid));
 }
 
 void EchoServer::HandleCloseConnection(Connection *conn)
@@ -38,6 +40,8 @@ void EchoServer::HandleErrorConnection(Connection *conn)
 
 void EchoServer::HandleOnMessage(Connection* conn, std::string& message)
 {
+    // 显示线程ID
+    printf("[%s], Thread ID: %ld\n", __FUNCTION__, syscall(SYS_gettid));
     // 假设在这里经过复杂运算
     message = "reply: " + message;
 

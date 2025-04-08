@@ -4,15 +4,19 @@
 #include "Channel.h"
 #include "Acceptor.h"
 #include "Connection.h"
+#include "ThreadPool.h"
 #include <map>
 
 // TCP网络服务类。
 class TcpServer
 {
 private:
-    EventLoop loop_;       // 一个TcpServer可以有多个事件循环，现在是单线程，暂时只用一个事件循环。
-    Acceptor *acceptor_;   // 一个TcpServer只有一个Acceptor对象。
-    std::map<int,Connection*>  conns_;           // 一个TcpServer有多个Connection对象，存放在map容器中。
+    EventLoop *mainloop_;
+    std::vector<EventLoop *> subloops_;
+    ThreadPool *threadpool_;
+    int threadnum_;
+    Acceptor *acceptor_;
+    std::map<int,Connection*> conns_;
     
     std::function<void(Connection*)> newconnectioncb_;    // 处理新客户端连接请求的回调函数，将指向TcpServer::newconnection()
     std::function<void(Connection*)> closecb_;    // 关闭fd_的回调函数，将回调TcpServer::closeconnection()。
@@ -22,7 +26,7 @@ private:
     std::function<void(EventLoop*)> epolltimeoutcb_;
 
 public:
-    TcpServer(const std::string &ip,const uint16_t port);
+    TcpServer(const std::string &ip,const uint16_t port, int threadnum=4);    // 构造函数，创建一个TcpServer对象，传入ip和端口号。
     ~TcpServer();
 
     void start();          // 运行事件循环。
