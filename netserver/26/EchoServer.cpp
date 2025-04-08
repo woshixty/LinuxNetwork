@@ -1,7 +1,7 @@
 #include "EchoServer.h"
 
-EchoServer::EchoServer(const std::string &ip,const uint16_t port)
-    : tcpserver_(ip, port)
+EchoServer::EchoServer(const std::string &ip,const uint16_t port, int threadnum)
+    : tcpserver_(ip, port, threadnum)
 {
     // 设置回调函数
     tcpserver_.setnewconnectioncallback(std::bind(&EchoServer::HandleNewConnection, this, std::placeholders::_1));
