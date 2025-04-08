@@ -28,6 +28,11 @@ TcpServer::~TcpServer()
     {
         delete aa.second;
     }
+    for (auto &aa:subloops_)
+    {
+        delete aa;
+    }
+    delete threadpool_;
 }
 
 // 运行事件循环。
