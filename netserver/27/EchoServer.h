@@ -1,16 +1,18 @@
 #pragma once
 
 #include "TcpServer.h"
+#include "ThreadPool.h"
 
 #include <string>
 
 class EchoServer
 {
 private:
-    TcpServer tcpserver_;    
+    TcpServer tcpserver_;
+    ThreadPool threadpool_;
 
 public:
-    EchoServer(const std::string &ip,const uint16_t port, int threadnum=3);
+    EchoServer(const std::string &ip,const uint16_t port, int subthreadnum=3, int workthreadnum=5);
     ~EchoServer();
 
     void start();
@@ -21,4 +23,6 @@ public:
     void HandleOnMessage(Connection* conn, std::string& message);
     void HandleSendComplete(Connection* conn);
     void HandleEpollTimeout(EventLoop* loop);
+
+    void OnMessage(Connection* conn, std::string message);
 };

@@ -1,7 +1,7 @@
 #include "EchoServer.h"
 
-EchoServer::EchoServer(const std::string &ip,const uint16_t port, int threadnum)
-    : tcpserver_(ip, port, threadnum)
+EchoServer::EchoServer(const std::string &ip,const uint16_t port, int subthreadnum, int workthreadnum)
+    : tcpserver_(ip, port, subthreadnum), threadpool_(workthreadnum, "Worker")
 {
     // 设置回调函数
     tcpserver_.setnewconnectioncallback(std::bind(&EchoServer::HandleNewConnection, this, std::placeholders::_1));
@@ -24,8 +24,6 @@ void EchoServer::start()
 void EchoServer::HandleNewConnection(Connection *clientsock)
 {
     std::cout << "New connection from " << clientsock->ip() << ":" << clientsock->port() << std::endl;
-
-    printf("[%s], Thread ID: %ld\n", __FUNCTION__, syscall(SYS_gettid));
 }
 
 void EchoServer::HandleCloseConnection(Connection *conn)
@@ -39,14 +37,9 @@ void EchoServer::HandleErrorConnection(Connection *conn)
 }
 
 void EchoServer::HandleOnMessage(Connection* conn, std::string& message)
-{
-    // 显示线程ID
-    printf("[%s], Thread ID: %ld\n", __FUNCTION__, syscall(SYS_gettid));
-    // 假设在这里经过复杂运算
-    message = "reply: " + message;
-
-    // 发送回复消息
-    conn->send(message.data(), message.size());
+{   
+    // 把业务添加到线程池任务队列中
+    threadpool_.addtask(std::bind(&EchoServer::OnMessage, this, conn, message));
 }
 
 void EchoServer::HandleSendComplete(Connection* conn)
@@ -57,4 +50,14 @@ void EchoServer::HandleSendComplete(Connection* conn)
 void EchoServer::HandleEpollTimeout(EventLoop* loop)
 {
     std::cout << "Epoll timeout occurred." << std::endl;
+}
+
+void EchoServer::OnMessage(Connection* conn, std::string message)
+{
+    // 答应工作线程ID
+    printf("[%s], Worker Thread ID: %ld\n", __FUNCTION__, syscall(SYS_gettid));
+    // 假设在这里经过复杂运算
+    message = "reply: " + message;
+    // 发送回复消息
+    conn->send(message.data(), message.size());
 }
