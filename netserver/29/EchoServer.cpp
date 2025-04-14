@@ -21,28 +21,28 @@ void EchoServer::start()
     tcpserver_.start();
 }
 
-void EchoServer::HandleNewConnection(Connection *clientsock)
+void EchoServer::HandleNewConnection(spConnection clientsock)
 {
     std::cout << "New connection from " << clientsock->ip() << ":" << clientsock->port() << std::endl;
 }
 
-void EchoServer::HandleCloseConnection(Connection *conn)
+void EchoServer::HandleCloseConnection(spConnection conn)
 {
     std::cout << "Connection closed: " << conn->ip() << ":" << conn->port() << std::endl;
 }
 
-void EchoServer::HandleErrorConnection(Connection *conn)
+void EchoServer::HandleErrorConnection(spConnection conn)
 {
     std::cerr << "Connection error: " << conn->ip() << ":" << conn->port() << std::endl;
 }
 
-void EchoServer::HandleOnMessage(Connection* conn, std::string& message)
+void EchoServer::HandleOnMessage(spConnection conn, std::string& message)
 {   
     // 把业务添加到线程池任务队列中
     threadpool_.addtask(std::bind(&EchoServer::OnMessage, this, conn, message));
 }
 
-void EchoServer::HandleSendComplete(Connection* conn)
+void EchoServer::HandleSendComplete(spConnection conn)
 {
     std::cout << "Send complete for connection: " << conn->ip() << ":" << conn->port() << std::endl;
 }
@@ -52,7 +52,7 @@ void EchoServer::HandleEpollTimeout(EventLoop* loop)
     std::cout << "Epoll timeout occurred." << std::endl;
 }
 
-void EchoServer::OnMessage(Connection* conn, std::string message)
+void EchoServer::OnMessage(spConnection conn, std::string message)
 {
     // 答应工作线程ID
     printf("[%s], Worker Thread ID: %ld\n", __FUNCTION__, syscall(SYS_gettid));

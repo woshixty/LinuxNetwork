@@ -16,13 +16,13 @@ public:
     ~EchoServer();
 
     void start();
-    void HandleNewConnection(Connection *clientsock);    // 处理新客户端连接请求，在Acceptor类中回调此函数。
-    void HandleCloseConnection(Connection *conn);  // 关闭客户端的连接，在Connection类中回调此函数。 
-    void HandleErrorConnection(Connection *conn);  // 客户端的连接错误，在Connection类中回调此函数。
+    void HandleNewConnection(spConnection clientsock);    // 处理新客户端连接请求，在Acceptor类中回调此函数。
+    void HandleCloseConnection(spConnection conn);  // 关闭客户端的连接，在Connection类中回调此函数。 
+    void HandleErrorConnection(spConnection conn);  // 客户端的连接错误，在Connection类中回调此函数。
 
-    void HandleOnMessage(Connection* conn, std::string& message);
-    void HandleSendComplete(Connection* conn);
+    void HandleOnMessage(spConnection conn, std::string& message);
+    void HandleSendComplete(spConnection conn);
     void HandleEpollTimeout(EventLoop* loop);
 
-    void OnMessage(Connection* conn, std::string message);
+    void OnMessage(spConnection conn, std::string message);
 };

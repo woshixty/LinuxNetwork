@@ -16,18 +16,12 @@ TcpServer::TcpServer(const std::string &ip,const uint16_t port, int threadnum)
         subloops_[ii]->setepolltimeoutcallback(std::bind(&TcpServer::epolltimeout,this,std::placeholders::_1));
         threadpool_->addtask(std::bind(&EventLoop::run,subloops_[ii]));
     }
-    
 }
 
 TcpServer::~TcpServer()
 {
     delete acceptor_;
     delete mainloop_;
-    // 释放全部的Connection对象。
-    for (auto &aa:conns_)
-    {
-        delete aa.second;
-    }
     for (auto &aa:subloops_)
     {
         delete aa;
@@ -44,8 +38,7 @@ void TcpServer::start()
 // 处理新客户端连接请求。
 void TcpServer::newconnection(Socket* clientsock)
 {
-    // Connection *conn=new Connection(mainloop_, clientsock);
-    Connection *conn=new Connection(subloops_[clientsock->fd() % threadnum_], clientsock);
+    spConnection conn(new Connection(subloops_[clientsock->fd() % threadnum_], clientsock));
     conn->setclosecallback(std::bind(&TcpServer::closeconnection,this,std::placeholders::_1));
     conn->seterrorcallback(std::bind(&TcpServer::errorconnection,this,std::placeholders::_1));
     conn->setonmessagecallback(std::bind(&TcpServer::onmessage,this,std::placeholders::_1,std::placeholders::_2));
@@ -56,27 +49,25 @@ void TcpServer::newconnection(Socket* clientsock)
 }
 
  // 关闭客户端的连接，在Connection类中回调此函数。 
- void TcpServer::closeconnection(Connection *conn)
+ void TcpServer::closeconnection(spConnection conn)
  {
     closecb_(conn);
     conns_.erase(conn->fd());
-    delete conn;
  }
 
 // 客户端的连接错误，在Connection类中回调此函数。
-void TcpServer::errorconnection(Connection *conn)
+void TcpServer::errorconnection(spConnection conn)
 {
     errorcb_(conn);
     conns_.erase(conn->fd());
-    delete conn;
 }
 
-void TcpServer::onmessage(Connection* conn, std::string& message)
+void TcpServer::onmessage(spConnection conn, std::string& message)
 {
     onmessagecb_(conn, message);
 }
 
-void TcpServer::sendcomplete(Connection* conn)
+void TcpServer::sendcomplete(spConnection conn)
 {
     // 根据业务需求增加代码
     sendcompletecb_(conn);

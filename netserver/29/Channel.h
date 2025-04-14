@@ -30,6 +30,8 @@ public:
     void disablereading();
     void enablewriting();
     void disablewriting();
+    void disableall();
+    void remove();
     void setinepoll();
     void setrevents(uint32_t ev);
     bool inpoll();
