@@ -17,9 +17,9 @@ using spConnection = std::shared_ptr<Connection>;    // Connection的智能指�
 class Connection : public std::enable_shared_from_this<Connection>
 {
 private:
-    EventLoop *loop_;           // Connection对应的事件循环，在构造函数中传入。 
-    Socket *clientsock_;        // 与客户端通讯的Socket。
-    Channel *clientchannel_;    // Connection对应的channel，在构造函数中创建。
+    const std::unique_ptr<EventLoop>& loop_;           // Connection对应的事件循环，在构造函数中传入。 
+    std::unique_ptr<Socket> clientsock_;        // 与客户端通讯的Socket。
+    std::unique_ptr<Channel> clientchannel_;    // Connection对应的channel，在构造函数中创建。
     Buffer inputbuffer_;
     Buffer outputbuffer_;
     std::atomic<bool> disconnect_{false};
@@ -30,7 +30,7 @@ private:
     std::function<void(spConnection)> sendcompletecallback_;
 
 public:
-    Connection(EventLoop *loop,Socket *clientsock);
+    Connection(const std::unique_ptr<EventLoop>& loop, std::unique_ptr<Socket> clientsock);
     ~Connection();
 
     int fd() const;

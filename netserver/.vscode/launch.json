@@ -1,0 +1,25 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug echoserver",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/home/xiety/桌面/LinuxNetwork/netserver/30/echoserver",
+            "args": ["192.168.50.10", "5085"],
+            "stopAtEntry": false,
+            "cwd": "/home/xiety/桌面/LinuxNetwork/netserver/30",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "Build echoserver"
+        }
+    ]
+}

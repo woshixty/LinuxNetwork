@@ -23,6 +23,7 @@ void EchoServer::start()
 
 void EchoServer::HandleNewConnection(spConnection clientsock)
 {
+    printf("EchoServer::HandleNewConnection()\n");
     std::cout << "New connection from " << clientsock->ip() << ":" << clientsock->port() << std::endl;
 }
 

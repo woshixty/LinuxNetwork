@@ -1,9 +1,12 @@
 #include "Connection.h"
 
-Connection::Connection(EventLoop *loop,Socket *clientsock):loop_(loop),clientsock_(clientsock)
+Connection::Connection(const std::unique_ptr<EventLoop>& loop, std::unique_ptr<Socket> clientsock)
+    : loop_(loop),
+        clientsock_(std::move(clientsock)), 
+        clientchannel_(new Channel(loop_,clientsock_->fd())),
+        disconnect_(false)
 {
-    // 为新客户端连接准备读事件，并添加到epoll中。
-    clientchannel_=new Channel(loop_,clientsock_->fd());   
+    printf("Connection::Connection()\n");
     clientchannel_->setreadcallback(std::bind(&Connection::onmessage,this));
     clientchannel_->setclosecallback(std::bind(&Connection::closecallback,this));
     clientchannel_->seterrorcallback(std::bind(&Connection::errorcallback,this));
@@ -13,10 +16,7 @@ Connection::Connection(EventLoop *loop,Socket *clientsock):loop_(loop),clientsoc
 }
 
 Connection::~Connection()
-{
-    delete clientsock_;
-    delete clientchannel_;
-}
+{}
 
 int Connection::fd() const                              // 返回客户端的fd。
 {

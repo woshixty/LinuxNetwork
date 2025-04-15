@@ -1,8 +1,9 @@
 #include "Channel.h"
 
-Channel::Channel(EventLoop* loop,int fd):loop_(loop),fd_(fd)
+Channel::Channel(const std::unique_ptr<EventLoop>& loop,int fd)
+    : loop_(loop), fd_(fd)
 {
-
+    printf("Channel::Channel()\n");
 }
 
 Channel::~Channel()
@@ -94,8 +95,14 @@ void Channel::handleevent()
     else if (revents_ & (EPOLLIN|EPOLLPRI))
     {
         printf("EPOLLIN|EPOLLPRI\n");
-        // 如果是acceptchannel，将回调Acceptor::newconnection()，如果是clientchannel，将回调Channel::onmessage()。
-        readcallback_();
+        if (readcallback_)  // 检查回调是否已设置
+        {
+            readcallback_();
+        }
+        else
+        {
+            fprintf(stderr, "Error: readcallback_ is not set!\n");
+        }
     }
     // 有数据需要写，暂时没有代码，以后再说。
     else if (revents_ & EPOLLOUT)

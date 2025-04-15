@@ -6,16 +6,17 @@
 #include "Connection.h"
 #include "ThreadPool.h"
 #include <map>
+#include <memory>
 
 // TCP网络服务类。
 class TcpServer
 {
 private:
-    EventLoop *mainloop_;
-    std::vector<EventLoop *> subloops_;
-    ThreadPool *threadpool_;
+    std::unique_ptr<EventLoop> mainloop_;
+    std::vector<std::unique_ptr<EventLoop>> subloops_;
+    ThreadPool threadpool_;
     int threadnum_;
-    Acceptor *acceptor_;
+    Acceptor acceptor_;
     std::map<int,spConnection> conns_;
     
     std::function<void(spConnection)> newconnectioncb_;    // 处理新客户端连接请求的回调函数，将指向TcpServer::newconnection()
@@ -31,14 +32,14 @@ public:
 
     void start();          // 运行事件循环。
 
-    void newconnection(Socket *clientsock);    // 处理新客户端连接请求，在Acceptor类中回调此函数。
+    void newconnection(std::unique_ptr<Socket> clientsock);    // 处理新客户端连接请求，在Acceptor类中回调此函数。
     void closeconnection(spConnection conn);  // 关闭客户端的连接，在Connection类中回调此函数。 
     void errorconnection(spConnection conn);  // 客户端的连接错误，在Connection类中回调此函数。
     void onmessage(spConnection conn, std::string& message);
     void sendcomplete(spConnection conn);
     void epolltimeout(EventLoop* loop);
 
-    void setnewconnectioncallback(std::function<void(spConnection)> fn) { newconnectioncb_ = fn; }    // 设置处理新客户端连接请求的回调函数。
+    void setnewconnectioncallback(std::function<void(spConnection)> fn);
     void setclosecallback(std::function<void(spConnection)> fn) { closecb_ = fn; }    // 设置关闭fd_的回调函数。
     void seterrorcallback(std::function<void(spConnection)> fn) { errorcb_ = fn; }    // 设置fd_发生了错误的回调函数。
     void setonmessagecallback(std::function<void(spConnection, std::string&)> fn) { onmessagecb_ = fn; }
