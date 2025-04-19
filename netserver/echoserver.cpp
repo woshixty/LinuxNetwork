@@ -12,8 +12,8 @@ int main(int argc,char *argv[])
         return -1; 
     }
 
-    EchoServer ecgoServer(argv[1],atoi(argv[2]), 3, 0);
-    ecgoServer.start();
+    EchoServer ecgoServer(argv[1],atoi(argv[2]), 3, 2);
+    ecgoServer.Start();
 
     return 0;
 }

@@ -1,70 +1,94 @@
 #include "EchoServer.h"
 
-EchoServer::EchoServer(const std::string &ip,const uint16_t port, int subthreadnum, int workthreadnum)
-    : tcpserver_(ip, port, subthreadnum), threadpool_(workthreadnum, "Worker")
+EchoServer::EchoServer(const std::string &ip,const uint16_t port,int subthreadnum,int workthreadnum)
+                   :tcpserver_(ip,port,subthreadnum),threadpool_(workthreadnum,"WORKS")
 {
-    // 设置回调函数
-    tcpserver_.setnewconnectioncallback(std::bind(&EchoServer::HandleNewConnection, this, std::placeholders::_1));
-    tcpserver_.setclosecallback(std::bind(&EchoServer::HandleCloseConnection, this, std::placeholders::_1));
-    tcpserver_.seterrorcallback(std::bind(&EchoServer::HandleErrorConnection, this, std::placeholders::_1));
-    tcpserver_.setonmessagecallback(std::bind(&EchoServer::HandleOnMessage, this, std::placeholders::_1, std::placeholders::_2));
-    tcpserver_.setsendcompletecallback(std::bind(&EchoServer::HandleSendComplete, this, std::placeholders::_1));
-    tcpserver_.setepolltimeoutcallback(std::bind(&EchoServer::HandleEpollTimeout, this, std::placeholders::_1));
+    // 以下代码不是必须的，业务关心什么事件，就指定相应的回调函数。
+    tcpserver_.setnewconnectioncb(std::bind(&EchoServer::HandleNewConnection, this, std::placeholders::_1));
+    tcpserver_.setcloseconnectioncb(std::bind(&EchoServer::HandleClose, this, std::placeholders::_1));
+    tcpserver_.seterrorconnectioncb(std::bind(&EchoServer::HandleError, this, std::placeholders::_1));
+    tcpserver_.setonmessagecb(std::bind(&EchoServer::HandleMessage, this, std::placeholders::_1, std::placeholders::_2));
+    tcpserver_.setsendcompletecb(std::bind(&EchoServer::HandleSendComplete, this, std::placeholders::_1));
+    // tcpserver_.settimeoutcb(std::bind(&EchoServer::HandleTimeOut, this, std::placeholders::_1));
 }
 
 EchoServer::~EchoServer()
-{}
+{
 
-void EchoServer::start()
+}
+
+// 启动服务。
+void EchoServer::Start()                
 {
     tcpserver_.start();
 }
 
-void EchoServer::HandleNewConnection(spConnection clientsock)
+// 处理新客户端连接请求，在TcpServer类中回调此函数。
+void EchoServer::HandleNewConnection(spConnection conn)    
 {
-    printf("EchoServer::HandleNewConnection()\n");
-    std::cout << "New connection from " << clientsock->ip() << ":" << clientsock->port() << std::endl;
+    std::cout << "New Connection Come in." << std::endl;
+    // printf("EchoServer::HandleNewConnection() thread is %d.\n",syscall(SYS_gettid));
+
+    // 根据业务的需求，在这里可以增加其它的代码。
 }
 
-void EchoServer::HandleCloseConnection(spConnection conn)
+// 关闭客户端的连接，在TcpServer类中回调此函数。 
+void EchoServer::HandleClose(spConnection conn)  
 {
-    std::cout << "Connection closed: " << conn->ip() << ":" << conn->port() << std::endl;
+    std::cout << "EchoServer conn closed." << std::endl;
+
+    // 根据业务的需求，在这里可以增加其它的代码。
 }
 
-void EchoServer::HandleErrorConnection(spConnection conn)
+// 客户端的连接错误，在TcpServer类中回调此函数。
+void EchoServer::HandleError(spConnection conn)  
 {
-    std::cerr << "Connection error: " << conn->ip() << ":" << conn->port() << std::endl;
+    std::cout << "EchoServer conn error." << std::endl;
+
+    // 根据业务的需求，在这里可以增加其它的代码。
 }
 
-void EchoServer::HandleOnMessage(spConnection conn, std::string& message)
-{   
-    if(threadpool_.size() == 0)
+// 处理客户端的请求报文，在TcpServer类中回调此函数。
+void EchoServer::HandleMessage(spConnection conn,const std::string& message)     
+{
+    // printf("EchoServer::HandleMessage() thread is %d.\n",syscall(SYS_gettid)); 
+
+    if (threadpool_.size()==0)
     {
-        OnMessage(conn, message);
+        // 如果没有工作线程，表示在IO线程中计算。
+        OnMessage(conn,message);       
     }
     else
     {
-        // 把业务添加到线程池任务队列中
-        threadpool_.addtask(std::bind(&EchoServer::OnMessage, this, conn, message));
+        // 把业务添加到线程池的任务队列中，交给工作线程去处理业务。
+        threadpool_.addtask(std::bind(&EchoServer::OnMessage,this,conn,message));
     }
 }
 
-void EchoServer::HandleSendComplete(spConnection conn)
+ // 处理客户端的请求报文，用于添加给线程池。
+ void EchoServer::OnMessage(spConnection conn,const std::string& message)     
+ {
+    // 在这里，将经过若干步骤的运算。
+    std::string messageT="reply:" + message;          // 回显业务。
+    printf("EchoServer::OnMessage() message is %s.\n",message.c_str());
+    printf("EchoServer::OnMessage() messageT is %s.\n",messageT.c_str());
+    conn->send(messageT.data(),messageT.size());   // 把数据发送出去。 
+ }
+
+// 数据发送完成后，在TcpServer类中回调此函数。
+void EchoServer::HandleSendComplete(spConnection conn)     
 {
-    std::cout << "Send complete for connection: " << conn->ip() << ":" << conn->port() << std::endl;
+    std::cout << "Message send complete." << std::endl;
+
+    // 根据业务的需求，在这里可以增加其它的代码。
 }
 
-void EchoServer::HandleEpollTimeout(EventLoop* loop)
+/*
+// epoll_wait()超时，在TcpServer类中回调此函数。
+void EchoServer::HandleTimeOut(EventLoop *loop)         
 {
-    std::cout << "Epoll timeout occurred." << std::endl;
-}
+    std::cout << "EchoServer timeout." << std::endl;
 
-void EchoServer::OnMessage(spConnection conn, std::string message)
-{
-    // 答应工作线程ID
-    printf("[%s], Worker Thread ID: %ld\n", __FUNCTION__, syscall(SYS_gettid));
-    // 假设在这里经过复杂运算
-    message = "reply: " + message;
-    // 发送回复消息
-    conn->send(message.data(), message.size());
+    // 根据业务的需求，在这里可以增加其它的代码。
 }
+*/
