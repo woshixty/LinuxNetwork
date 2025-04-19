@@ -13,8 +13,7 @@ EchoServer::EchoServer(const std::string &ip,const uint16_t port, int subthreadn
 }
 
 EchoServer::~EchoServer()
-{
-}
+{}
 
 void EchoServer::start()
 {
@@ -39,8 +38,15 @@ void EchoServer::HandleErrorConnection(spConnection conn)
 
 void EchoServer::HandleOnMessage(spConnection conn, std::string& message)
 {   
-    // 把业务添加到线程池任务队列中
-    threadpool_.addtask(std::bind(&EchoServer::OnMessage, this, conn, message));
+    if(threadpool_.size() == 0)
+    {
+        OnMessage(conn, message);
+    }
+    else
+    {
+        // 把业务添加到线程池任务队列中
+        threadpool_.addtask(std::bind(&EchoServer::OnMessage, this, conn, message));
+    }
 }
 
 void EchoServer::HandleSendComplete(spConnection conn)

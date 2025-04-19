@@ -3,7 +3,7 @@
 TcpServer::TcpServer(const std::string &ip,const uint16_t port, int threadnum)
     : threadnum_(threadnum),
     mainloop_(new EventLoop()), 
-    acceptor_(mainloop_, ip, port),
+    acceptor_(mainloop_.get(), ip, port),
     threadpool_(threadnum, "IO")
 {
     mainloop_->setepolltimeoutcallback(std::bind(&TcpServer::epolltimeout,this,std::placeholders::_1));
@@ -32,7 +32,7 @@ void TcpServer::newconnection(std::unique_ptr<Socket> clientsock)
 {
     printf("TcpServer::newconnection()\n");
     spConnection conn = std::make_shared<Connection>(
-        subloops_[clientsock->fd() % threadnum_], 
+        subloops_[clientsock->fd() % threadnum_].get(), 
         std::move(clientsock)
     );
     printf("fd=%d, ip=%s, port=%d\n", conn->fd(), conn->ip().c_str(), conn->port());

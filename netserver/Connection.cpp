@@ -1,6 +1,6 @@
 #include "Connection.h"
 
-Connection::Connection(const std::unique_ptr<EventLoop>& loop, std::unique_ptr<Socket> clientsock)
+Connection::Connection(EventLoop* loop, std::unique_ptr<Socket> clientsock)
     : loop_(loop),
         clientsock_(std::move(clientsock)), 
         clientchannel_(new Channel(loop_,clientsock_->fd())),

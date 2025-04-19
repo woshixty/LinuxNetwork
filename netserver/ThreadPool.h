@@ -23,11 +23,14 @@ private:
 	std::atomic_bool stop_;                         // 在析构函数中，把stop_的值设置为true，全部的线程将退出。
 	std::string threadtype_;
 public:
-    // 在构造函数中将启动threadnum个线程，
+    // 在构造函数中将启动threadnum个线程
 	ThreadPool(size_t threadnum, std::string threadtype);
 
     // 把任务添加到队列中。
-    void addtask(std::function<void()> task);   
+    void addtask(std::function<void()> task);
+
+	// 获取线程池的大小
+	size_t size() const;
 
     // 在析构函数中将停止线程。
 	~ThreadPool();

@@ -12,7 +12,7 @@ int main(int argc,char *argv[])
         return -1; 
     }
 
-    EchoServer ecgoServer(argv[1],atoi(argv[2]));
+    EchoServer ecgoServer(argv[1],atoi(argv[2]), 3, 0);
     ecgoServer.start();
 
     return 0;
