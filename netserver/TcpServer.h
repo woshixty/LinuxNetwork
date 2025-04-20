@@ -20,12 +20,12 @@ private:
     ThreadPool threadpool_;
     std::mutex mmutex_;
     std::map<int,spConnection> conns_;
-    std::function<void(spConnection)> newconnectioncb_;
-    std::function<void(spConnection)> closeconnectioncb_;
-    std::function<void(spConnection)> errorconnectioncb_;
-    std::function<void(spConnection,const std::string &message)> onmessagecb_;
+    std::function<void(spConnection)> newconnectioncb_ = nullptr;
+    std::function<void(spConnection)> closeconnectioncb_ = nullptr;
+    std::function<void(spConnection)> errorconnectioncb_ = nullptr;
+    std::function<void(spConnection,const std::string &message)> onmessagecb_ = nullptr;
     std::function<void(spConnection)> sendcompletecb_;
-    std::function<void(EventLoop*)>  timeoutcb_;
+    std::function<void(EventLoop*)>  timeoutcb_ = nullptr;
 public:
     TcpServer(const std::string &ip,const uint16_t port,int threadnum=3);
     ~TcpServer();

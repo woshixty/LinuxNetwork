@@ -98,7 +98,10 @@ void TcpServer::sendcomplete(spConnection conn)
 void TcpServer::epolltimeout(EventLoop *loop)         
 {
     // 回调EchoServer::HandleTimeOut()。
-    if (timeoutcb_)  timeoutcb_(loop);
+    if (timeoutcb_)
+    {
+        timeoutcb_(loop);
+    }
 }
 
 void TcpServer::setnewconnectioncb(std::function<void(spConnection)> fn)
