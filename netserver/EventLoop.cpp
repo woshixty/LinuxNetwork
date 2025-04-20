@@ -103,21 +103,22 @@ bool EventLoop::isinloopthread()
  // 事件循环线程被eventfd唤醒后执行的函数。
  void EventLoop::handlewakeup()
  {
-    printf("handlewakeup() thread id is %ld.\n",syscall(SYS_gettid));
+    printf("[%s], thread id is %ld.\n", __FUNCTION__, syscall(SYS_gettid));
 
     uint64_t val;
-    read(wakeupfd_,&val,sizeof(val));       // 从eventfd中读取出数据，如果不读取，eventfd的读事件会一直触发。
+    // 从eventfd中读取出数据，如果不读取，eventfd的读事件会一直触发。
+    read(wakeupfd_,&val,sizeof(val));
 
     std::function<void()> fn;
 
-    std::lock_guard<std::mutex> gd(mutex_);           // 给任务队列加锁。
+    std::lock_guard<std::mutex> gd(mutex_);
 
     // 执行队列中全部的发送任务。
     while (taskqueue_.size()>0)
     {
-        fn=std::move(taskqueue_.front());    // 出队一个元素。
+        fn=std::move(taskqueue_.front());
         taskqueue_.pop();                              
-        fn();                                                    // 执行任务。
+        fn();
     }
  }
 
@@ -130,7 +131,27 @@ bool EventLoop::isinloopthread()
     timerfd_settime(timerfd_, 0, &timeout, 0);
 
     if(mainloop_)
-        printf("主事件循环 闹钟时间到了\n");
+    {
+        // printf("主事件循环 闹钟时间到了\n");
+    }
     else
-        printf("从事件循环 闹钟时间到了\n");
- }
+    {
+        printf("[%s], 从事件循环 闹钟时间到了, thread is %ld\n", __FUNCTION__, syscall(SYS_gettid));
+        time_t now=time(0);
+
+        for(auto& aa:conns_)
+        {
+            // printf("[%s], fd id %d\n", __FUNCTION__, aa.first);
+            if(aa.second->timeout(now, 10))
+            {
+                printf("[%s], erase fd id %d\n", __FUNCTION__, aa.first);
+                conns_.erase(aa.first);
+            }
+        }
+    }
+}
+
+void EventLoop::newconnections(spConnection conn)
+{
+    conns_[conn->fd()] = conn;
+}

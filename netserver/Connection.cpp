@@ -1,10 +1,12 @@
 #include "Connection.h"
 
 Connection::Connection(EventLoop* loop,std::unique_ptr<Socket> clientsock)
-                   :loop_(loop),clientsock_(std::move(clientsock)),disconnect_(false),clientchannel_(new Channel(loop_,clientsock_->fd())) 
+    : loop_(loop),
+        clientsock_(std::move(clientsock)),
+        disconnect_(false),
+        clientchannel_(new Channel(loop_,clientsock_->fd())) 
 {
     // 为新客户端连接准备读事件，并添加到epoll中。
-    //clientchannel_=new Channel(loop_,clientsock_->fd());   
     clientchannel_->setreadcallback(std::bind(&Connection::onmessage,this));
     clientchannel_->setclosecallback(std::bind(&Connection::closecallback,this));
     clientchannel_->seterrorcallback(std::bind(&Connection::errorcallback,this));
@@ -15,55 +17,63 @@ Connection::Connection(EventLoop* loop,std::unique_ptr<Socket> clientsock)
 
 Connection::~Connection()
 {
-    // delete clientsock_;
-    // delete clientchannel_;
+    printf("[%s], 已经析构", __FUNCTION__);
 }
 
-int Connection::fd() const                              // 返回客户端的fd。
+// 返回客户端的fd。
+int Connection::fd() const
 {
     return clientsock_->fd();
 }
 
-std::string Connection::ip() const                   // 返回客户端的ip。
+// 返回客户端的ip。
+std::string Connection::ip() const
 {
     return clientsock_->ip();
 }
 
-uint16_t Connection::port() const                  // 返回客户端的port。
+// 返回客户端的port。
+uint16_t Connection::port() const
 {
     return clientsock_->port();
 }
 
-void Connection::closecallback()                    // TCP连接关闭（断开）的回调函数，供Channel回调。
+// TCP连接关闭（断开）的回调函数，供Channel回调。
+void Connection::closecallback()
 {
     disconnect_=true;
-    clientchannel_->remove();                         // 从事件循环中删除Channel。
+    clientchannel_->remove();
     closecallback_(shared_from_this());
 }
 
-void Connection::errorcallback()                    // TCP连接错误的回调函数，供Channel回调。
+void Connection::errorcallback()
 {
     disconnect_=true;
-    clientchannel_->remove();                  // 从事件循环中删除Channel。
-    errorcallback_(shared_from_this());     // 回调TcpServer::errorconnection()。
+    // 从事件循环中删除Channel。
+    clientchannel_->remove();
+    // 回调TcpServer::errorconnection()。
+    errorcallback_(shared_from_this());
 }
 
 // 设置关闭fd_的回调函数。
 void Connection::setclosecallback(std::function<void(spConnection)> fn)    
 {
-    closecallback_=fn;     // 回调TcpServer::closeconnection()。
+    // 回调TcpServer::closeconnection()。
+    closecallback_=fn;
 }
 
 // 设置fd_发生了错误的回调函数。
 void Connection::seterrorcallback(std::function<void(spConnection)> fn)    
 {
-    errorcallback_=fn;     // 回调TcpServer::errorconnection()。
+    // 回调TcpServer::errorconnection()。
+    errorcallback_=fn;
 }
 
 // 设置处理报文的回调函数。
 void Connection::setonmessagecallback(std::function<void(spConnection,const std::string&)> fn)    
 {
-    onmessagecallback_=fn;       // 回调TcpServer::onmessage()。
+    // 回调TcpServer::onmessage()。
+    onmessagecallback_=fn;
 }
 
 // 发送数据完成后的回调函数。
@@ -76,21 +86,27 @@ void Connection::setsendcompletecallback(std::function<void(spConnection)> fn)
 void Connection::onmessage()
 {
     char buffer[1024];
-    while (true)             // 由于使用非阻塞IO，一次读取buffer大小数据，直到全部的数据读取完毕。
+    // 由于使用非阻塞IO，一次读取buffer大小数据，直到全部的数据读取完毕。
+    while (true)
     {    
         bzero(&buffer, sizeof(buffer));
         ssize_t nread = read(fd(), buffer, sizeof(buffer));
-        if (nread > 0)      // 成功的读取到了数据。
+        // 成功的读取到了数据。
+        if (nread > 0)
         {
-            inputbuffer_.append(buffer,nread);      // 把读取的数据追加到接收缓冲区中。
+            // 把读取的数据追加到接收缓冲区中。
+            inputbuffer_.append(buffer,nread);
         } 
-        else if (nread == -1 && errno == EINTR) // 读取数据的时候被信号中断，继续读取。
+        // 读取数据的时候被信号中断，继续读取。
+        else if (nread == -1 && errno == EINTR)
         {  
             continue;
         } 
-        else if (nread == -1 && ((errno == EAGAIN) || (errno == EWOULDBLOCK))) // 全部的数据已读取完毕。
+        // 全部的数据已读取完毕。
+        else if (nread == -1 && ((errno == EAGAIN) || (errno == EWOULDBLOCK)))
         {
-            while (true)             // 从接收缓冲区中拆分出客户端的请求消息。
+            // 从接收缓冲区中拆分出客户端的请求消息。
+            while (true)
             {
                 //////////////////////////////////////////////////////////////
                 // 可以把以下代码封装在Buffer类中，还可以支持固定长度、指定报文长度和分隔符等多种格式。
@@ -107,13 +123,15 @@ void Connection::onmessage()
                 lastatime_ = Timestamp::now();
                 printf("lastatime_ is %s\n", lastatime_.toString().c_str());
 
-                onmessagecallback_(shared_from_this(),message);       // 回调TcpServer::onmessage()处理客户端的请求消息。
+                // 回调TcpServer::onmessage()处理客户端的请求消息。
+                onmessagecallback_(shared_from_this(),message);
             }
             break;
         } 
         else if (nread == 0)  // 客户端连接已断开。
         {  
-            closecallback();                                  // 回调TcpServer::closecallback()。
+            // 回调TcpServer::closecallback()。
+            closecallback();
             break;
         }
     }
@@ -165,4 +183,11 @@ void Connection::writecallback()
         clientchannel_->disablewriting();        
         sendcompletecallback_(shared_from_this());
     }
+}
+
+bool Connection::timeout(time_t now, int val)
+{
+    printf("[%s], now %ld\n", __FUNCTION__, now);
+    printf("[%s], lastatime_ %ld\n", __FUNCTION__, lastatime_.toInt());
+    return now - lastatime_.toInt() > val;
 }

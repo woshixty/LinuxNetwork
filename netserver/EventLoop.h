@@ -1,15 +1,22 @@
 #pragma once
-#include <functional>
+
 #include "Epoll.h"
+#include "Connection.h"
+
+#include <functional>
 #include <memory>
 #include <unistd.h>
 #include <queue>
 #include <mutex>
+#include <map>
 #include <sys/eventfd.h>
 #include <sys/syscall.h>
 
 class Channel;
 class Epoll;
+class Connection;
+
+using spConnection=std::shared_ptr<Connection>;
 
 // 事件循环类。
 class EventLoop
@@ -28,6 +35,13 @@ private:
 
     bool mainloop_;
 
+    std::map<int, spConnection> conns_;
+
+    // 1、在事件循环中增加 map<int spConnection> 存放Connection对象
+    // 2、闹钟时间到了 便利conns 从判断是否超时
+    // 3、如果超时 删除conns里面的Connection对象
+    // 4、从TcpServer.conns里面删除Connection对象
+
 public:
     EventLoop(bool mainloop);                   // 在构造函数中创建Epoll对象ep_。
     ~EventLoop();                // 在析构函数中销毁ep_。
@@ -45,4 +59,6 @@ public:
     void handlewakeup();                                             // 事件循环线程被eventfd唤醒后执行的函数。
     
     void handletimer();
+
+    void newconnections(spConnection conn);
 };

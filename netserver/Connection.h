@@ -10,6 +10,8 @@
 #include <atomic>
 #include <sys/syscall.h>
 
+class EventLoop;
+class Channel;
 class Connection;
 using spConnection=std::shared_ptr<Connection>;
 
@@ -51,4 +53,6 @@ public:
     void send(const char *data,size_t size);        
     // 发送数据，如果当前线程是IO线程，直接调用此函数，如果是工作线程，将把此函数传给IO线程去执行。
     void sendinloop(const std::string& data);
+
+    bool timeout(time_t now, int val);
 };
