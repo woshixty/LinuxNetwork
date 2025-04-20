@@ -49,11 +49,7 @@ int main(int argc, char *argv[])
         memcpy(tmpbuf+4,buf,len);  // 拼接报文内容。
 
         send(sockfd,tmpbuf,len+4,0);  // 把请求报文发送给服务端。
-    }
-
-    for (int ii=0;ii<1;ii++)
-    {
-        int len;
+        
         recv(sockfd,&len,4,0);            // 先读取4字节的报文头部。
 
         memset(buf,0,sizeof(buf));

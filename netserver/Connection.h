@@ -5,6 +5,7 @@
 #include "Channel.h"
 #include "EventLoop.h"
 #include "Buffer.h"
+#include "Timestamp.h"
 #include <memory>
 #include <atomic>
 #include <sys/syscall.h>
@@ -26,6 +27,7 @@ private:
     std::function<void(spConnection)> errorcallback_;                   // fd_发生了错误的回调函数，将回调TcpServer::errorconnection()。
     std::function<void(spConnection,const std::string&)> onmessagecallback_;   // 处理报文的回调函数，将回调TcpServer::onmessage()。
     std::function<void(spConnection)> sendcompletecallback_;               // 发送数据完成后的回调函数，将回调TcpServer::sendcomplete()。
+    Timestamp lastatime_;
 
 public:
     Connection(EventLoop* loop,std::unique_ptr<Socket> clientsock);

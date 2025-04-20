@@ -22,8 +22,14 @@ private:
     std::mutex mutex_;                                                  // 任务队列同步的互斥锁。
     int wakeupfd_;                                                         // 用于唤醒事件循环线程的eventfd。
     std::unique_ptr<Channel> wakechannel_;              // eventfd的Channel。
+
+    int timerfd_;
+    std::unique_ptr<Channel> timerchannel_;
+
+    bool mainloop_;
+
 public:
-    EventLoop();                   // 在构造函数中创建Epoll对象ep_。
+    EventLoop(bool mainloop);                   // 在构造函数中创建Epoll对象ep_。
     ~EventLoop();                // 在析构函数中销毁ep_。
 
     void run();                      // 运行事件循环。
@@ -37,4 +43,6 @@ public:
     void queueinloop(std::function<void()> fn);          // 把任务添加到队列中。
     void wakeup();                                                        // 用eventfd唤醒事件循环线程。
     void handlewakeup();                                             // 事件循环线程被eventfd唤醒后执行的函数。
+    
+    void handletimer();
 };

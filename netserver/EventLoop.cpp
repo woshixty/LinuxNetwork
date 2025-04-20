@@ -1,18 +1,37 @@
 #include "EventLoop.h"
 
+#include <sys/timerfd.h>
+
+int createtimerfd(int sec = 30)
+{
+    int tfd = timerfd_create(CLOCK_MONOTONIC, TFD_CLOEXEC | TFD_NONBLOCK);
+    struct itimerspec timeout;
+    memset(&timeout, 0, sizeof(struct itimerspec));
+    timeout.it_value.tv_sec = 5;
+    timeout.it_value.tv_nsec = 0;
+    timerfd_settime(tfd, 0, &timeout, 0);
+    return tfd;
+}
+
 // 在构造函数中创建Epoll对象ep_。
-EventLoop::EventLoop()
-                  :ep_(new Epoll),wakeupfd_(eventfd(0,EFD_NONBLOCK)),wakechannel_(new Channel(this,wakeupfd_))
+EventLoop::EventLoop(bool mainloop)
+    :ep_(new Epoll),
+    wakeupfd_(eventfd(0,EFD_NONBLOCK)),
+    wakechannel_(new Channel(this,wakeupfd_)),
+    timerfd_(createtimerfd()),
+    timerchannel_(new Channel(this, timerfd_)),
+    mainloop_(mainloop)
 {
     wakechannel_->setreadcallback(std::bind(&EventLoop::handlewakeup,this));
     wakechannel_->enablereading();
+
+    timerchannel_->setreadcallback(std::bind(&EventLoop::handletimer, this));
+    timerchannel_->enablereading();
 }
 
 // 在析构函数中销毁ep_。
 EventLoop::~EventLoop()
-{
-    // delete ep_;
-}
+{}
 
 // 运行事件循环。
 void EventLoop::run()                      
@@ -100,4 +119,18 @@ bool EventLoop::isinloopthread()
         taskqueue_.pop();                              
         fn();                                                    // 执行任务。
     }
+ }
+
+ void EventLoop::handletimer()
+ {
+    struct itimerspec timeout;
+    memset(&timeout, 0, sizeof(struct itimerspec));
+    timeout.it_value.tv_sec = 5;
+    timeout.it_value.tv_nsec = 0;
+    timerfd_settime(timerfd_, 0, &timeout, 0);
+
+    if(mainloop_)
+        printf("主事件循环 闹钟时间到了\n");
+    else
+        printf("从事件循环 闹钟时间到了\n");
  }

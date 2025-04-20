@@ -104,6 +104,8 @@ void Connection::onmessage()
                 //////////////////////////////////////////////////////////////
 
                 printf("message (fd=%d):%s\n",fd(),message.c_str());
+                lastatime_ = Timestamp::now();
+                printf("lastatime_ is %s\n", lastatime_.toString().c_str());
 
                 onmessagecallback_(shared_from_this(),message);       // 回调TcpServer::onmessage()处理客户端的请求消息。
             }
