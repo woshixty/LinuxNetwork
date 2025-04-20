@@ -7,23 +7,25 @@
 #include "ThreadPool.h"
 #include <map>
 #include <memory>
+#include <mutex>
 
 // TCP网络服务类。
 class TcpServer
 {
 private:
-    std::unique_ptr<EventLoop> mainloop_;                                 // 主事件循环。 祼指针 普通指针 原始指针 std::unique_ptr
-    std::vector<std::unique_ptr<EventLoop>> subloops_;            // 存放从事件循环的容器。
-    Acceptor acceptor_;                                         // 一个TcpServer只有一个Acceptor对象。
-    int threadnum_;                                               // 线程池的大小，即从事件循环的个数。
-    ThreadPool threadpool_;                                 // 线程池。
-    std::map<int,spConnection>  conns_;            // 一个TcpServer有多个Connection对象，存放在map容器中。
-    std::function<void(spConnection)> newconnectioncb_;          // 回调EchoServer::HandleNewConnection()。
-    std::function<void(spConnection)> closeconnectioncb_;        // 回调EchoServer::HandleClose()。
-    std::function<void(spConnection)> errorconnectioncb_;         // 回调EchoServer::HandleError()。
-    std::function<void(spConnection,const std::string &message)> onmessagecb_;        // 回调EchoServer::HandleMessage()。
-    std::function<void(spConnection)> sendcompletecb_;            // 回调EchoServer::HandleSendComplete()。
-    std::function<void(EventLoop*)>  timeoutcb_;                       // 回调EchoServer::HandleTimeOut()。
+    std::unique_ptr<EventLoop> mainloop_;
+    std::vector<std::unique_ptr<EventLoop>> subloops_;
+    Acceptor acceptor_;
+    int threadnum_;
+    ThreadPool threadpool_;
+    std::mutex mmutex_;
+    std::map<int,spConnection> conns_;
+    std::function<void(spConnection)> newconnectioncb_;
+    std::function<void(spConnection)> closeconnectioncb_;
+    std::function<void(spConnection)> errorconnectioncb_;
+    std::function<void(spConnection,const std::string &message)> onmessagecb_;
+    std::function<void(spConnection)> sendcompletecb_;
+    std::function<void(EventLoop*)>  timeoutcb_;
 public:
     TcpServer(const std::string &ip,const uint16_t port,int threadnum=3);
     ~TcpServer();
@@ -43,4 +45,6 @@ public:
     void setonmessagecb(std::function<void(spConnection,const std::string &message)> fn);
     void setsendcompletecb(std::function<void(spConnection)> fn);
     void settimeoutcb(std::function<void(EventLoop*)> fn);
+
+    void removeconnection(int fd);
 };

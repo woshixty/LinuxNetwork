@@ -34,8 +34,13 @@ private:
     std::unique_ptr<Channel> timerchannel_;
 
     bool mainloop_;
+    std::mutex mmutex_;
 
     std::map<int, spConnection> conns_;
+
+    std::function<void(int)> timercallback_;
+    int timetvl_;
+    int timeout_;
 
     // 1、在事件循环中增加 map<int spConnection> 存放Connection对象
     // 2、闹钟时间到了 便利conns 从判断是否超时
@@ -43,7 +48,7 @@ private:
     // 4、从TcpServer.conns里面删除Connection对象
 
 public:
-    EventLoop(bool mainloop);                   // 在构造函数中创建Epoll对象ep_。
+    EventLoop(bool mainloop, int timetvl=30, int timeout=20);                   // 在构造函数中创建Epoll对象ep_。
     ~EventLoop();                // 在析构函数中销毁ep_。
 
     void run();                      // 运行事件循环。
@@ -61,4 +66,6 @@ public:
     void handletimer();
 
     void newconnections(spConnection conn);
+
+    void settimercallback(std::function<void(int)> fn);
 };

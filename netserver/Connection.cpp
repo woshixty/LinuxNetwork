@@ -17,7 +17,7 @@ Connection::Connection(EventLoop* loop,std::unique_ptr<Socket> clientsock)
 
 Connection::~Connection()
 {
-    printf("[%s], 已经析构", __FUNCTION__);
+    printf("[%s], 已经析构\n", __FUNCTION__);
 }
 
 // 返回客户端的fd。

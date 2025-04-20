@@ -7,20 +7,22 @@ int createtimerfd(int sec = 30)
     int tfd = timerfd_create(CLOCK_MONOTONIC, TFD_CLOEXEC | TFD_NONBLOCK);
     struct itimerspec timeout;
     memset(&timeout, 0, sizeof(struct itimerspec));
-    timeout.it_value.tv_sec = 5;
+    timeout.it_value.tv_sec = sec;
     timeout.it_value.tv_nsec = 0;
     timerfd_settime(tfd, 0, &timeout, 0);
     return tfd;
 }
 
 // 在构造函数中创建Epoll对象ep_。
-EventLoop::EventLoop(bool mainloop)
+EventLoop::EventLoop(bool mainloop, int timetvl, int timeout)
     :ep_(new Epoll),
     wakeupfd_(eventfd(0,EFD_NONBLOCK)),
     wakechannel_(new Channel(this,wakeupfd_)),
-    timerfd_(createtimerfd()),
+    timerfd_(createtimerfd(timetvl)),
     timerchannel_(new Channel(this, timerfd_)),
-    mainloop_(mainloop)
+    mainloop_(mainloop),
+    timetvl_(timetvl), 
+    timeout_(timeout)
 {
     wakechannel_->setreadcallback(std::bind(&EventLoop::handlewakeup,this));
     wakechannel_->enablereading();
@@ -86,11 +88,11 @@ bool EventLoop::isinloopthread()
  void EventLoop::queueinloop(std::function<void()> fn)
  {
     {
-        std::lock_guard<std::mutex> gd(mutex_);           // 给任务队列加锁。
-        taskqueue_.push(fn);                                            // 任务入队。
+        std::lock_guard<std::mutex> gd(mutex_);
+        taskqueue_.push(fn);
     }
 
-    wakeup();        // 唤醒事件循环。
+    wakeup();
  }
 
 // 用eventfd唤醒事件循环线程。
@@ -126,7 +128,7 @@ bool EventLoop::isinloopthread()
  {
     struct itimerspec timeout;
     memset(&timeout, 0, sizeof(struct itimerspec));
-    timeout.it_value.tv_sec = 5;
+    timeout.it_value.tv_sec = timetvl_;
     timeout.it_value.tv_nsec = 0;
     timerfd_settime(timerfd_, 0, &timeout, 0);
 
@@ -139,13 +141,16 @@ bool EventLoop::isinloopthread()
         printf("[%s], 从事件循环 闹钟时间到了, thread is %ld\n", __FUNCTION__, syscall(SYS_gettid));
         time_t now=time(0);
 
-        for(auto& aa:conns_)
-        {
-            // printf("[%s], fd id %d\n", __FUNCTION__, aa.first);
-            if(aa.second->timeout(now, 10))
-            {
-                printf("[%s], erase fd id %d\n", __FUNCTION__, aa.first);
-                conns_.erase(aa.first);
+        for (auto it = conns_.begin(); it != conns_.end(); ) {
+            printf("[%s], fd id %d\n", __FUNCTION__, it->first);
+            if (it->second->timeout(now, timeout_)) {
+                timercallback_(it->first);
+                {
+                    std::lock_guard<std::mutex> gd(mmutex_);
+                    it = conns_.erase(it); // 删除元素并更新迭代器
+                }
+            } else {
+                ++it; // 正常移动到下一个元素
             }
         }
     }
@@ -153,5 +158,11 @@ bool EventLoop::isinloopthread()
 
 void EventLoop::newconnections(spConnection conn)
 {
+    std::lock_guard<std::mutex> gd(mmutex_);
     conns_[conn->fd()] = conn;
+}
+
+void EventLoop::settimercallback(std::function<void(int)> fn)
+{
+    timercallback_ = fn;
 }
