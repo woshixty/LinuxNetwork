@@ -1,6 +1,7 @@
 /*
  * 程序名：echoserver.cpp，此程序用于演示采用epoll模型实现网络通讯的服务端。
 */
+#include <signal.h>
 #include "EchoServer.h"
 
 int main(int argc,char *argv[])
